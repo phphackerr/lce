@@ -85,7 +85,7 @@
     display: flex;
     flex-direction: column;
     background: var(--settings-tabbar-background);
-    width: 200px;
+    width: 15%;
     padding-top: 10px;
     box-shadow: var(--settings-tabbar-box-shadow);
     z-index: 1;
@@ -124,7 +124,6 @@
   }
   .tab-content-wrapper {
     flex-grow: 1;
-    padding: 20px;
     overflow-y: auto;
   }
 </style>

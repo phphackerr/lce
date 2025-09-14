@@ -10,22 +10,21 @@
   },
   "SETTING": {
     "settings": "Settings",
-    "close_settings": "Close",
     "GENERAL": {
       "general_tab": "General",
-      "lang": "Language",
-      "theme_tooltip": "Theme",
-      "choose_path": "Choose path (click)",
-      "delete_path_tooltip": "Delete path",
-      "add_folder": "Add folder",
-      "config_not_found": "Config file not found. Please select path to config file.",
-      "select_path": "Select path"
+      "select_path": "Select path to game:",
+      "add_folder_tooltip": "Add folder",
+      "paths_not_found": "Paths not found. Please add path to configuration file or run scanner.",
+      "run_scanner": "Run Scanner",
+      "scanning": "Looking for paths, please wait..."
     },
     "LANGUAGE": {
-      "language_tab": "Language"
+      "language_tab": "Language",
+      "lang": "Language"
     },
     "THEME": {
-      "theme_tab": "Theme"
+      "theme_tab": "Theme",
+      "theme_tooltip": "Theme"
     },
     "ABOUT": {
       "about_tab": "About"
