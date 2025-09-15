@@ -1,6 +1,8 @@
 package config_editor
 
 import (
+	"log"
+
 	"gopkg.in/ini.v1"
 )
 
@@ -42,8 +44,10 @@ func (c *GameConfig) Set(section, key, value string) {
 // Сохранить обратно в файл
 func (c *GameConfig) Save() error {
 	if c.file == nil || c.path == "" {
+		log.Println("⚠ Save skipped: file or path is nil")
 		return nil
 	}
+	log.Println("💾 Saving INI to:", c.path)
 	return c.file.SaveTo(c.path)
 }
 

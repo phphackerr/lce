@@ -1,28 +1,41 @@
+//@ts-nocheck
 import { Events } from "@wailsio/runtime";
 import {
   StartWatching,
   StopWatching,
 } from "../../bindings/lce/backend/modules/config_watcher/configwatcher";
-import { appSettings } from "../store/appSettings";
+import { get } from "svelte/store";
+import { isInternalChange } from "../store/internalChange";
 
 let currentPath = null;
 
 // --- API для UI --- //
 export function onConfigChanged(callback) {
-  Events.On("config-changed", (event) => {
+  const listener = (event) => {
     const filePath = Array.isArray(event.data) ? event.data[0] : event.data;
-    console.log("⚡ Config changed:", filePath);
+
+    // Игнорируем изменения, сделанные программой
+    if (get(isInternalChange)) {
+      console.log("⚡ Internal config changed:", filePath);
+      return;
+    }
+
+    // Внешние изменения
+    console.log("⚡ External config changed:", filePath);
+    // Events.Emit("external-config-changed", filePath); // для бэка
     callback(filePath);
-  });
+  };
+
+  Events.On("config-changed", listener);
+
+  return {
+    off: () => Events.Off("config-changed", listener),
+  };
 }
 
 export async function startWatcher(path) {
-  if (!path) {
-    console.warn("⚠ startWatcher: пустой путь");
-    return;
-  }
+  if (!path) return;
 
-  // Останавливаем предыдущий вотчер, если был
   if (currentPath) {
     try {
       await StopWatching();
@@ -35,7 +48,7 @@ export async function startWatcher(path) {
   }
 
   try {
-    await StartWatching(path);
+    await StartWatching(path, 200);
     currentPath = path;
     console.log("👀 Watcher started for:", path);
   } catch (err) {
@@ -53,19 +66,3 @@ export async function stopWatcher() {
     currentPath = null;
   }
 }
-
-// --- Автоподписка на смену game_path --- //
-appSettings.subscribe((settings) => {
-  // Укажем именно файл, а не папку
-  const newPath = settings.game_path
-    ? settings.game_path + "\\config.lod.ini"
-    : null;
-
-  if (newPath !== currentPath) {
-    if (newPath) {
-      startWatcher(newPath);
-    } else if (currentPath) {
-      stopWatcher();
-    }
-  }
-});

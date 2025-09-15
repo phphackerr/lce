@@ -4,20 +4,23 @@ import (
 	"log"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type ConfigWatcher struct {
-	app      *application.App
-	filePath string
-	watcher  *fsnotify.Watcher
-	stop     chan struct{}
-	stopOnce sync.Once
+	app        *application.App
+	filePath   string
+	watcher    *fsnotify.Watcher
+	stop       chan struct{}
+	stopOnce   sync.Once
+	lastEvent  time.Time
+	debounceMs int
 }
 
-// New создаёт вотчер
+// New создаёт пустой вотчер
 func New(app *application.App) *ConfigWatcher {
 	return &ConfigWatcher{
 		app:  app,
@@ -26,13 +29,18 @@ func New(app *application.App) *ConfigWatcher {
 }
 
 // StartWatching — вызывается из фронтенда
-func (cw *ConfigWatcher) StartWatching(path string) error {
+func (cw *ConfigWatcher) StartWatching(path string, debounceMs int) error {
 	// если вотчер уже активен — останавливаем
 	if cw.watcher != nil {
 		cw.StopWatching()
 	}
 
+	if debounceMs <= 0 {
+		debounceMs = 200 // дефолт
+	}
+
 	cw.filePath = path
+	cw.debounceMs = debounceMs
 	cw.stopOnce = sync.Once{}
 	cw.stop = make(chan struct{})
 
@@ -60,6 +68,12 @@ func (cw *ConfigWatcher) run() {
 					event.Op&fsnotify.Create == fsnotify.Create ||
 					event.Op&fsnotify.Rename == fsnotify.Rename ||
 					event.Op&fsnotify.Chmod == fsnotify.Chmod) {
+
+				now := time.Now()
+				if now.Sub(cw.lastEvent) < time.Duration(cw.debounceMs)*time.Millisecond {
+					continue
+				}
+				cw.lastEvent = now
 
 				log.Println("⚡ Config file changed:", event)
 				cw.app.Event.Emit("config-changed", cw.filePath)

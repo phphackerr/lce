@@ -9,10 +9,11 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 /**
  * StartWatching — вызывается из фронтенда
  * @param {string} path
+ * @param {number} debounceMs
  * @returns {$CancellablePromise<void>}
  */
-export function StartWatching(path) {
-    return $Call.ByID(4224750185, path);
+export function StartWatching(path, debounceMs) {
+    return $Call.ByID(4224750185, path, debounceMs);
 }
 
 /**

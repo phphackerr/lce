@@ -7,6 +7,17 @@
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 /**
+ * CheckConfigDiff сравнивает текущий конфиг в памяти с тем, что на диске,
+ * возвращает map[section]map[key]value только с изменёнными значениями
+ * @returns {$CancellablePromise<{ [_: string]: { [_: string]: { [_: string]: string } } }>}
+ */
+export function CheckConfigDiff() {
+    return $Call.ByID(1212632879).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType2($result);
+    }));
+}
+
+/**
  * Получить значение
  * @param {string} section
  * @param {string} option
@@ -61,3 +72,8 @@ export function ReloadConfig() {
 export function SetConfigValue(section, option, value) {
     return $Call.ByID(3299114961, section, option, value);
 }
+
+// Private type creation functions
+const $$createType0 = $Create.Map($Create.Any, $Create.Any);
+const $$createType1 = $Create.Map($Create.Any, $$createType0);
+const $$createType2 = $Create.Map($Create.Any, $$createType1);
