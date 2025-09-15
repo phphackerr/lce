@@ -6,40 +6,34 @@
 
 <script>
   import { onMount } from "svelte";
-  import { CheckAndFindPaths } from "../../../../bindings/lce/backend/modules/paths_scanner/scanner";
+  import { get } from "svelte/store";
   import {
     appSettings,
-    updateFirstRun,
-    updateAllPaths,
-    updateGamePath,
+    runScanner,
+    deletePath,
   } from "../../../store/appSettings";
-  import { get } from "svelte/store";
   import { Open } from "../../../../bindings/lce/backend/windows/settingswindow";
-  import Radio from "./components/Radio.svelte";
-  import { t } from "svelte-i18n";
   import { GetConfigValue } from "../../../../bindings/lce/backend/modules/config_editor/configeditor";
+  import Radio from "./components/Radio.svelte";
   import AddFolderButton from "./components/AddFolderButton.svelte";
   import ScannerOverlay from "./components/ScannerOverlay.svelte";
+  import { t } from "svelte-i18n";
 
   let gamePathOptions = [];
   let selectedGamePath = "";
   let isLoadingPaths = false;
 
+  // подписка на изменения стора
   appSettings.subscribe((settings) => {
     if (settings.all_paths && settings.all_paths.length > 0) {
       gamePathOptions = settings.all_paths.map((path) => ({
         label: path,
         value: path,
       }));
-
-      if (
-        settings.game_path &&
-        settings.all_paths.includes(settings.game_path)
-      ) {
-        selectedGamePath = settings.game_path;
-      } else {
-        selectedGamePath = "";
-      }
+      selectedGamePath =
+        settings.game_path && settings.all_paths.includes(settings.game_path)
+          ? settings.game_path
+          : "";
     } else {
       gamePathOptions = [];
       selectedGamePath = "";
@@ -53,64 +47,24 @@
       await Open();
       isLoadingPaths = true;
       try {
-        const pathsFound = await CheckAndFindPaths();
-        console.log("Найденные пути:", pathsFound);
-
-        await updateAllPaths(pathsFound);
-        if (pathsFound.length === 1) {
-          await updateGamePath(pathsFound[0]);
-        }
-        await updateFirstRun(false);
-      } catch (error) {
-        console.error("Ошибка при поиске или обновлении путей:", error);
-        await updateFirstRun(false);
+        await runScanner();
       } finally {
         isLoadingPaths = false;
       }
     }
+
     let test = await GetConfigValue("GAMEOPTIONS", "WideScreen", "true");
     console.log(test);
   });
 
-  async function handleDeletePath(pathToDelete) {
-    const currentSettings = get(appSettings);
-    const currentAllPaths = currentSettings.all_paths;
-    const currentGamePath = currentSettings.game_path;
-
-    const updatedPaths = currentAllPaths.filter(
-      (path) => path !== pathToDelete
-    );
-
-    await updateAllPaths(updatedPaths);
-
-    if (pathToDelete === currentGamePath) {
-      let newGamePath = "";
-      if (updatedPaths.length > 0) {
-        newGamePath = updatedPaths[0];
-      }
-      await updateGamePath(newGamePath);
-    }
+  async function handleDeletePath(path) {
+    await deletePath(path);
   }
 
   async function handleRunScanner() {
     isLoadingPaths = true;
-    try {
-      const pathsFound = await CheckAndFindPaths();
-      console.log("Найденные пути после сканирования:", pathsFound);
-
-      await updateAllPaths(pathsFound);
-      if (pathsFound.length === 1) {
-        await updateGamePath(pathsFound[0]);
-      }
-      const isFirstRun = get(appSettings).first_run;
-      if (isFirstRun) {
-        await updateFirstRun(false);
-      }
-    } catch (error) {
-      console.error("Ошибка при сканировании путей:", error);
-    } finally {
-      isLoadingPaths = false;
-    }
+    await runScanner();
+    isLoadingPaths = false;
   }
 </script>
 

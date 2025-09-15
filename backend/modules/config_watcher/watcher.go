@@ -3,6 +3,7 @@ package config_watcher
 import (
 	"log"
 	"path/filepath"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -13,6 +14,7 @@ type ConfigWatcher struct {
 	filePath string
 	watcher  *fsnotify.Watcher
 	stop     chan struct{}
+	stopOnce sync.Once
 }
 
 // New создаёт вотчер
@@ -25,7 +27,14 @@ func New(app *application.App) *ConfigWatcher {
 
 // StartWatching — вызывается из фронтенда
 func (cw *ConfigWatcher) StartWatching(path string) error {
+	// если вотчер уже активен — останавливаем
+	if cw.watcher != nil {
+		cw.StopWatching()
+	}
+
 	cw.filePath = path
+	cw.stopOnce = sync.Once{}
+	cw.stop = make(chan struct{})
 
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -48,11 +57,11 @@ func (cw *ConfigWatcher) run() {
 		case event := <-cw.watcher.Events:
 			if filepath.Clean(event.Name) == filepath.Clean(cw.filePath) &&
 				(event.Op&fsnotify.Write == fsnotify.Write ||
-					event.Op&fsnotify.Create == fsnotify.Create) {
+					event.Op&fsnotify.Create == fsnotify.Create ||
+					event.Op&fsnotify.Rename == fsnotify.Rename ||
+					event.Op&fsnotify.Chmod == fsnotify.Chmod) {
 
 				log.Println("⚡ Config file changed:", event)
-
-				// эмитим событие для фронтенда
 				cw.app.Event.Emit("config-changed", cw.filePath)
 			}
 
@@ -68,7 +77,11 @@ func (cw *ConfigWatcher) run() {
 
 // StopWatching — останавливает наблюдение
 func (cw *ConfigWatcher) StopWatching() {
-	if cw.stop != nil {
+	cw.stopOnce.Do(func() {
 		close(cw.stop)
-	}
+		if cw.watcher != nil {
+			_ = cw.watcher.Close()
+			cw.watcher = nil
+		}
+	})
 }

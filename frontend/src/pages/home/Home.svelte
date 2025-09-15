@@ -1,9 +1,11 @@
 <script>
   import TitleBar from "./TitleBar.svelte";
+  import Watcher from "./Watcher.svelte";
 </script>
 
 <div class="main">
   <TitleBar />
+  <Watcher />
 </div>
 
 <style>

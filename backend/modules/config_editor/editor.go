@@ -2,7 +2,6 @@ package config_editor
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
@@ -29,8 +28,6 @@ func (e *ConfigEditor) LoadConfig() error {
 
 	wcDir := settings.GamePath
 	configPath := wcDir + "\\config.lod.ini"
-
-	log.Printf(configPath)
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
