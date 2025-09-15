@@ -86,6 +86,7 @@
     flex-direction: column;
     background: var(--settings-tabbar-background);
     width: 15%;
+    min-width: 150px;
     padding-top: 10px;
     box-shadow: var(--settings-tabbar-box-shadow);
     z-index: 1;

@@ -7,6 +7,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"lce/backend/modules/app_settings"
+	"lce/backend/modules/config_editor"
+	"lce/backend/modules/config_watcher"
 	"lce/backend/modules/i18n"
 	"lce/backend/modules/paths_scanner"
 	"lce/backend/modules/theming"
@@ -26,6 +28,7 @@ func main() {
 			application.NewService(theming.NewThemeService()),
 			application.NewService(paths_scanner.NewScanner()),
 			application.NewService(app_settings.NewAppSettings()),
+			application.NewService(config_editor.NewConfigEditor()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -42,6 +45,9 @@ func main() {
 
 	settingsWindow := windows.NewSettingsWindow(app, mainWindow)
 	app.RegisterService(application.NewService(settingsWindow))
+
+	configWatcher := config_watcher.New(app)
+	app.RegisterService(application.NewService(configWatcher))
 
 	err := app.Run()
 
