@@ -8,6 +8,12 @@
     "maximize_tooltip": "Maximize",
     "close_tooltip": "Close"
   },
+  "WATCHER": {
+    "external_changes": "External changes",
+    "accept_changes": "Accept changes",
+    "discard_changes": "Discard changes",
+    "watcher_working": "Working"
+  },
   "SETTING": {
     "settings": "Settings",
     "GENERAL": {

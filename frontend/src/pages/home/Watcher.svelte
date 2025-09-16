@@ -324,6 +324,7 @@
     width: 100%;
     padding-top: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.2); /* Небольшая разделительная линия */
+    margin-top: auto;
   }
 
   .button {
@@ -340,12 +341,7 @@
   }
 
   .button:hover {
-    background-color: rgba(
-      255,
-      255,
-      255,
-      0.2
-    ); /* Более яркий фон при наведении */
+    background-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-1px); /* Небольшое поднятие кнопки */
   }
 
@@ -374,6 +370,8 @@
   .no-changes {
     flex-direction: row;
     gap: 10px;
+    align-items: center;
+    justify-content: center;
   }
 
   .eyes {
