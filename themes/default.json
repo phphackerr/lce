@@ -39,5 +39,9 @@
     "settings-tab-transition": "background 0.2s, color 0.2s",
     "settings-tab-bg-color-active": "#181c20",
     "settings-tab-text-color-active": "#3ba475",
-    "settings-tab-right-border": "3px solid #3ba475"
+    "settings-tab-right-border": "3px solid #3ba475",
+
+    "scrollbar-bg-track-color": "rgba(255, 255, 255, 0.1)",
+    "scrollbar-bg-thumb-color": "rgba(255, 255, 255, 0.2)",
+    "scrollbar-bg-hover-color": "rgba(255, 255, 255, 0.3)"
 }

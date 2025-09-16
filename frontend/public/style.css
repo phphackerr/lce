@@ -30,3 +30,30 @@ body {
     margin: 0;
     padding: 0;
 }
+
+
+
+/* Глобальные стили для скроллбара */
+::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg-track-color);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-bg-thumb-color);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-bg-hover-color);
+  }
+  
+  /* Для Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-bg-thumb-color) var(--scrollbar-bg-track-color);
+  }

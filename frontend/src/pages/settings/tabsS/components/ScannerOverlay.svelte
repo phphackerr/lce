@@ -6,7 +6,7 @@
 {#if show}
   <div class="loading-overlay">
     <div class="loading-content">
-      <div class="spinner"></div>
+      <div class="eyes"></div>
       <span class="loading-text">{text}</span>
     </div>
   </div>
@@ -34,22 +34,41 @@
     font-size: 1.2em;
   }
 
-  .spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #fff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 10px;
+  /* HTML: <div class="loader"></div> */
+  .eyes {
+    display: inline-flex;
+    gap: 10px;
   }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
+  .eyes:before,
+  .eyes:after {
+    content: "";
+    height: 20px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(farthest-side, #000 95%, #0000) 35% 35%/6px 6px
+      no-repeat #fff;
+    animation: l5 3s infinite;
+  }
+  @keyframes l5 {
+    0%,
+    11% {
+      background-position: 35% 35%;
     }
+    14%,
+    36% {
+      background-position: 65% 35%;
+    }
+    38%,
+    61% {
+      background-position: 65% 65%;
+    }
+    64%,
+    86% {
+      background-position: 35% 65%;
+    }
+    88%,
     100% {
-      transform: rotate(360deg);
+      background-position: 35% 35%;
     }
   }
 
