@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync" // Для обеспечения потокобезопасности при изменении настроек
+
+	"github.com/wailsapp/wails/v3/pkg/application" // <--- ДОБАВЛЯЕМ ИМПОРТ WAILS APPLICATION
 )
 
 // Settings - структура для хранения настроек приложения
@@ -141,19 +143,21 @@ func SaveSettings(newSettings *Settings) error {
 // AppSettings - это структура, которая будет привязана к фронтенду Wails.
 // Она содержит текущие настройки и мьютекс для потокобезопасного доступа.
 type AppSettings struct {
+	app      *application.App // <--- ДОБАВЛЕНО: Ссылка на приложение Wails
 	settings Settings
 	lock     sync.RWMutex // Мьютекс для безопасного доступа к настройкам
 }
 
 // NewAppSettings создает новый экземпляр AppSettings.
 // Он загружает существующие настройки или использует значения по умолчанию.
-func NewAppSettings() *AppSettings {
+func NewAppSettings(app *application.App) *AppSettings { // <--- ИЗМЕНЕНО: Принимает *application.App
 	s, err := LoadSettings()
 	if err != nil {
 		fmt.Printf("Ошибка при загрузке настроек: %v. Используются настройки по умолчанию.\n", err)
 		s = DefaultSettings()
 	}
 	return &AppSettings{
+		app:      app, // <--- ИНИЦИАЛИЗАЦИЯ
 		settings: s,
 	}
 }
@@ -246,6 +250,12 @@ func (a *AppSettings) UpdateSettings(newSettings map[string]interface{}) (Settin
 		}
 		a.settings = currentSettings // Обновляем внутренние настройки только если сохранение было успешным
 		fmt.Println("Настройки успешно сохранены")
+
+		// <--- ДОБАВЛЕНА ОТЛАДОЧНАЯ ПЕЧАТЬ ---
+		fmt.Printf("Debug: Emitting event 'app-settings-updated' with data. Type: %T, Value: %+v\n", a.settings, a.settings)
+		// --- КОНЕЦ ОТЛАДОЧНОЙ ПЕЧАТИ ---
+
+		a.app.Event.Emit("app-settings-updated", a.settings)
 	} else {
 		fmt.Println("Настройки не изменились, сохранение не требуется.")
 	}

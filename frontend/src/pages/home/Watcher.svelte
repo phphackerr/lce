@@ -14,6 +14,7 @@
   } from "../../../bindings/lce/backend/modules/config_editor/configeditor";
   import { get } from "svelte/store";
   import { t } from "svelte-i18n";
+  import { Events } from "@wailsio/runtime";
 
   let diff = {};
   let currentPath = null;
@@ -23,15 +24,54 @@
   let isHovered = false;
 
   onMount(() => {
-    unsubscribe = appSettings.subscribe((settings) => {
+    unsubscribe = appSettings.subscribe(async (settings) => {
       const newPath = settings.game_path
         ? settings.game_path + "\\config.lod.ini"
         : null;
+      console.log(newPath, currentPath);
       if (newPath !== currentPath) {
-        if (newPath) LoadConfig().then(() => startWatcher(newPath));
-        else if (currentPath) stopWatcher();
-        currentPath = newPath;
+        if (newPath) {
+          try {
+            await LoadConfig();
+            await startWatcher(newPath);
+            currentPath = newPath;
+          } catch (error) {
+            console.error("Ошибка при перезапуске вотчера:", error);
+            // Опционально: можно добавить логику для уведомления пользователя
+          }
+        } else if (currentPath) {
+          try {
+            await stopWatcher();
+            currentPath = newPath;
+          } catch (error) {
+            console.error("Ошибка при остановке вотчера:", error);
+          }
+        }
       }
+    });
+
+    Events.On("app-settings-updated", (event) => {
+      console.log(
+        "[Watcher.svelte] Получено событие 'app-settings-updated'. Event data:",
+        event.data
+      );
+
+      let actualSettings = event.data;
+      // Проверяем, является ли event.data массивом, и извлекаем первый элемент
+      if (Array.isArray(event.data) && event.data.length > 0) {
+        actualSettings = event.data[0];
+        console.warn(
+          "[Watcher.svelte] Wails event.data получен как массив. Извлекаем первый элемент."
+        );
+      } else if (Array.isArray(event.data) && event.data.length === 0) {
+        console.warn(
+          "[Watcher.svelte] Wails event.data получен как пустой массив. Пропускаем обновление."
+        );
+        return; // Пропускаем обновление, если массив пуст
+      }
+
+      appSettings.set(actualSettings); // Используем извлеченные настройки
+      diff = {};
     });
 
     configListener = onConfigChanged(async (filePath) => {
@@ -45,6 +85,7 @@
   onDestroy(() => {
     if (unsubscribe) unsubscribe();
     if (configListener) configListener.off();
+    Events.Off("app-settings-updated");
   });
 
   function acceptChanges() {
@@ -54,7 +95,7 @@
     changedFile = "";
   }
 
-  function restoreChanges() {
+  function disacrdChanges() {
     diff = {};
     changedFile = "";
   }
@@ -83,12 +124,14 @@
       width: {isHovered
       ? Object.keys(diff).length
         ? '400px'
-        : '250px'
+        : '280px'
       : '60px'};
       border-radius: {isHovered ? '5px' : '50%'};"
   >
     <div
-      class="indicator"
+      class="indicator {Object.keys(diff).length ? 'alert' : 'ok'} {isHovered
+        ? 'paused'
+        : ''}"
       style="
       background-color: {Object.keys(diff).length ? 'orange' : 'green'};
       height: {Object.keys(diff).length
@@ -106,24 +149,46 @@
         {Object.keys(diff).length ? "⚠" : "✔"}
       </div>
     </div>
-    <div class="content" class:visible={isHovered}>
+    <div
+      class="content {Object.keys(diff).length ? '' : 'no-changes'}"
+      class:visible={isHovered}
+    >
       {#if Object.keys(diff).length}
         <div class="headline">{$t("external_changes")}:</div>
         <hr />
-        {#each Object.entries(diff) as [section, keys]}
-          <div class="section">
-            <strong>{section}</strong>
-            <ul>
-              {#each Object.entries(keys) as [key, info]}
-                <li>
-                  {key}: {info.old ?? "<deleted>"} → {info.new ?? "<deleted>"} ({info.status})
-                </li>
-              {/each}
-            </ul>
+        <div class="diff-text">
+          {#each Object.entries(diff) as [section, keys]}
+            <div class="section">
+              <strong>{section}</strong>
+              <ul>
+                {#each Object.entries(keys) as [key, info]}
+                  <li>
+                    <span class="key-text">{key}</span>: {info.old ??
+                      "<deleted>"} → {info.new ?? "<deleted>"}
+                    <span
+                      class="status {info.status == 'added'
+                        ? 'added'
+                        : info.status == 'deleted'
+                          ? 'deleted'
+                          : 'modified'}">({info.status})</span
+                    >
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/each}
+        </div>
+        <div class="footer">
+          <div class="button">
+            <span class="button-text">{$t("accept_changes")}</span>
           </div>
-        {/each}
+          <div class="button">
+            <span class="button-text">{$t("discard_changes")}</span>
+          </div>
+        </div>
       {:else}
-        Im working, all fine
+        <div class="eyes"></div>
+        <span>{$t("watcher_working")}</span>
       {/if}
     </div>
   </div>
@@ -193,7 +258,10 @@
     visibility: visible;
     max-height: 100%;
     padding: 5px;
-    overflow-y: auto; /* <--- ДОБАВИТЬ ЭТУ СТРОКУ */
+  }
+
+  .diff-text {
+    overflow-y: auto;
   }
 
   .content hr {
@@ -202,11 +270,16 @@
 
   .section {
     margin-bottom: 10px;
+    overflow-y: auto;
   }
 
   .section strong {
     display: block;
     margin-bottom: 3px;
+    color: #ffd700; /* Золотой цвет для заголовков секций */
+    font-size: 1.1em;
+    padding-left: 5px; /* Небольшой отступ слева */
+    border-left: 3px solid #ffd700; /* Декоративная полоса слева */
   }
 
   .section ul {
@@ -217,5 +290,138 @@
 
   .section li {
     font-size: 0.85em;
+    margin-bottom: 2px;
+    background-color: rgba(
+      255,
+      255,
+      255,
+      0.05
+    ); /* Легкий фон для каждой строки */
+    padding: 3px 5px;
+    border-radius: 3px;
+    margin-bottom: 5px;
+  }
+
+  .key-text {
+    color: #add8e6; /* Светло-голубой цвет для ключей */
+  }
+
+  .added {
+    color: rgb(31, 194, 31);
+  }
+
+  .deleted {
+    color: rgb(194, 31, 31);
+  }
+
+  .modified {
+    color: rgb(194, 194, 31);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-around; /* Распределяем кнопки равномерно */
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Небольшая разделительная линия */
+  }
+
+  .button {
+    background-color: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition:
+      background-color 0.2s ease,
+      transform 0.1s ease; /* Плавный переход для hover */
+    text-align: center; /* Центрируем текст внутри кнопки */
+  }
+
+  .button:hover {
+    background-color: rgba(
+      255,
+      255,
+      255,
+      0.2
+    ); /* Более яркий фон при наведении */
+    transform: translateY(-1px); /* Небольшое поднятие кнопки */
+  }
+
+  .button:active {
+    transform: translateY(0); /* Возвращаем на место при клике */
+  }
+
+  .indicator.alert {
+    animation: pulse 1s infinite;
+  }
+
+  .indicator.paused {
+    animation: none;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  .no-changes {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .eyes {
+    height: 30px;
+    aspect-ratio: 2;
+    display: grid;
+    background:
+      radial-gradient(farthest-side, #000 15%, #0000 18%) 0 0/50% 100%,
+      radial-gradient(50% 100% at 50% 160%, #fff 95%, #0000) 0 0 /50% 50%,
+      radial-gradient(50% 100% at 50% -60%, #fff 95%, #0000) 0 100%/50% 50%;
+    background-repeat: repeat-x;
+    animation: l2 1.5s infinite linear;
+  }
+  @keyframes l2 {
+    0%,
+    15% {
+      background-position:
+        0 0,
+        0 0,
+        0 100%;
+    }
+    20%,
+    40% {
+      background-position:
+        5px 0,
+        0 0,
+        0 100%;
+    }
+    45%,
+    55% {
+      background-position:
+        0 0,
+        0 0,
+        0 100%;
+    }
+    60%,
+    80% {
+      background-position:
+        -5px 0,
+        0 0,
+        0 100%;
+    }
+    85%,
+    100% {
+      background-position:
+        0 0,
+        0 0,
+        0 100%;
+    }
   }
 </style>

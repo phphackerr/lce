@@ -53,6 +53,7 @@ export async function startWatcher(path) {
     console.log("👀 Watcher started for:", path);
   } catch (err) {
     console.error("Ошибка запуска вотчера:", err);
+    throw err; // Это очень важно! Перебрасываем ошибку, чтобы Svelte мог ее поймать.
   }
 }
 
@@ -62,6 +63,7 @@ export async function stopWatcher() {
     console.log("🛑 Watcher stopped");
   } catch (err) {
     console.error("Ошибка остановки вотчера:", err);
+    throw err; // Это очень важно! Перебрасываем ошибку.
   } finally {
     currentPath = null;
   }

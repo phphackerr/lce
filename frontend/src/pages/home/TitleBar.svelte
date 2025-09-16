@@ -160,6 +160,7 @@
   }
 
   .search-label {
+    --wails-draggable: no-drag;
     display: flex;
     height: 25px;
     align-items: center;

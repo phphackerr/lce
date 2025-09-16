@@ -27,7 +27,6 @@ func main() {
 			application.NewService(i18n.NewI18N()),
 			application.NewService(theming.NewThemeService()),
 			application.NewService(paths_scanner.NewScanner()),
-			application.NewService(app_settings.NewAppSettings()),
 			application.NewService(config_editor.NewConfigEditor()),
 		},
 		Assets: application.AssetOptions{
@@ -42,6 +41,9 @@ func main() {
 		Frameless: true,
 		URL:       "/",
 	})
+
+	appSettings := app_settings.NewAppSettings(app)
+	app.RegisterService(application.NewService(appSettings))
 
 	settingsWindow := windows.NewSettingsWindow(app, mainWindow)
 	app.RegisterService(application.NewService(settingsWindow))
